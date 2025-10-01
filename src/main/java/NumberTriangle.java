@@ -1,5 +1,6 @@
 import java.io.*;
-
+import java.util.ArrayList;
+import java.util.List;
 /**
  * This is the provided NumberTriangle class to be used in this coding task.
  *
@@ -64,8 +65,26 @@ public class NumberTriangle {
      */
     public void maxSumPath() {
         // for fun [not for credit]:
-    }
+        if (isLeaf()){
+            return;
+        }
+        if (left != null) {
+            this.left.maxSumPath();
+        }
+        if (right != null) {
+            this.right.maxSumPath();
+        }
 
+        if (left == null){
+            this.root += this.right.getRoot();
+        }else if(right == null){
+            this.root += this.left.getRoot();
+        }else {
+            this.root += Math.max(this.left.getRoot(), this.right.getRoot());
+        }
+        this.left = null;
+        this.right = null;
+    }
 
     public boolean isLeaf() {
         return right == null && left == null;
@@ -89,7 +108,24 @@ public class NumberTriangle {
      */
     public int retrieve(String path) {
         // TODO implement this method
-        return -1;
+        NumberTriangle cur = this;        // start from this node
+        for (int i = 0; i < path.length(); i++) {
+            char ch = path.charAt(i);
+            if (ch == 'l') {
+                if (cur.left == null) {
+                    throw new IllegalStateException("Path goes past a leaf at index " + i);
+                }
+                cur = cur.left;
+            } else if (ch == 'r') {
+                if (cur.right == null) {
+                    throw new IllegalStateException("Path goes past a leaf at index " + i);
+                }
+                cur = cur.right;
+            } else {
+                throw new IllegalArgumentException("Invalid char in path: '" + ch + "' at index " + i);
+            }
+        }
+        return cur.root;
     }
 
     /** Read in the NumberTriangle structure from a file.
@@ -108,19 +144,45 @@ public class NumberTriangle {
         // are more convenient to work with when reading the file contents.
         InputStream inputStream = NumberTriangle.class.getClassLoader().getResourceAsStream(fname);
         BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
-
-
+        if (inputStream == null) {
+            throw new IOException("Resource not found on classpath: " + fname);
+        }
         // TODO define any variables that you want to use to store things
 
         // will need to return the top of the NumberTriangle,
         // so might want a variable for that.
+        List<NumberTriangle> prevRow = null;
         NumberTriangle top = null;
 
         String line = br.readLine();
         while (line != null) {
+            line = line.trim();
+            if (!line.isEmpty()) {
+                // parse this row
+                String[] toks = line.split("\\s+");
+                List<NumberTriangle> curRow = new ArrayList<>(toks.length);
+                for (String t : toks) {
+                    curRow.add(new NumberTriangle(Integer.parseInt(t)));
+                }
 
-            // remove when done; this line is included so running starter code prints the contents of the file
-            System.out.println(line);
+                // link previous row -> current row
+                if (prevRow != null) {
+                    // parent i has left child curRow[i] and right child curRow[i+1]
+                    for (int i = 0; i < prevRow.size(); i++) {
+                        prevRow.get(i).setLeft(curRow.get(i));
+                        prevRow.get(i).setRight(curRow.get(i + 1));
+                    }
+                } else {
+                    // first row: set top
+                    if (curRow.size() != 1) {
+                        br.close();
+                        throw new IOException("First row must have exactly one value.");
+                    }
+                    top = curRow.get(0);
+                }
+
+                prevRow = curRow;
+            }
 
             // TODO process the line
 
@@ -128,6 +190,9 @@ public class NumberTriangle {
             line = br.readLine();
         }
         br.close();
+        if (top == null) {
+            throw new IOException("Empty triangle file: " + fname);
+        }
         return top;
     }
 
