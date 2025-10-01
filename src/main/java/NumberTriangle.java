@@ -64,8 +64,26 @@ public class NumberTriangle {
      */
     public void maxSumPath() {
         // for fun [not for credit]:
-    }
+        if (isLeaf()){
+            return;
+        }
+        if (left != null) {
+            this.left.maxSumPath();
+        }
+        if (right != null) {
+            this.right.maxSumPath();
+        }
 
+        if (left == null){
+            this.root += this.right.getRoot();
+        }else if(right == null){
+            this.root += this.left.getRoot();
+        }else {
+            this.root += Math.max(this.left.getRoot(), this.right.getRoot());
+        }
+        this.left = null;
+        this.right = null;
+    }
 
     public boolean isLeaf() {
         return right == null && left == null;
@@ -89,7 +107,24 @@ public class NumberTriangle {
      */
     public int retrieve(String path) {
         // TODO implement this method
-        return -1;
+        NumberTriangle cur = this;        // start from this node
+        for (int i = 0; i < path.length(); i++) {
+            char ch = path.charAt(i);
+            if (ch == 'l') {
+                if (cur.left == null) {
+                    throw new IllegalStateException("Path goes past a leaf at index " + i);
+                }
+                cur = cur.left;
+            } else if (ch == 'r') {
+                if (cur.right == null) {
+                    throw new IllegalStateException("Path goes past a leaf at index " + i);
+                }
+                cur = cur.right;
+            } else {
+                throw new IllegalArgumentException("Invalid char in path: '" + ch + "' at index " + i);
+            }
+        }
+        return cur.root;
     }
 
     /** Read in the NumberTriangle structure from a file.
